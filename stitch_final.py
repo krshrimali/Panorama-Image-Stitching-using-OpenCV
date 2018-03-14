@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+import argparse
+
 def resize(src, dst, ratio):
     dst = cv2.resize(src, (0, 0), fx=ratio, fy=ratio, interpolation = cv2.INTER_CUBIC)
     return dst
@@ -57,13 +59,23 @@ def matchKeyPoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
         return (matches, H, status)
     return None
 
+# construct argument parse
+arg = argparse.ArgumentParser() 
 
-imageA = cv2.imread("../Task-2/images/first.jpg", 1)
-imageB = cv2.imread("../Task-2/images/second.jpg", 1)
+# parse arguments
+arg.add_argument("-f", "--first", required=True,
+        help = "first image path")
+arg.add_argument("-s", "--second", required=True,
+        help = "second image path")
+
+args = vars(arg.parse_args())
+
+imageA = cv2.imread(args["first"])
+imageB = cv2.imread(args["second"])
 
 if imageA is None:
     print("None")
-images = [imageB, imageA]
+images = [imageA, imageB]
 
 result = stitcher(images, 1)
 cv2.imshow("imgA", imageA)
