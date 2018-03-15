@@ -2,13 +2,34 @@ import cv2
 import numpy as np
 import argparse
 
-def resize(src, dst, ratio):
-    dst = cv2.resize(src, (0, 0), fx=ratio, fy=ratio, interpolation = cv2.INTER_CUBIC)
-    return dst
+def resize(src, dst, width=None, height=None,
+        inter=cv2.INTER_AREA):
+    dim = None
+    (h, w) = src.shape[:2] # take height and width
+    
+    # if nothing of width and height is given, return image
+    if width is None and height is None:
+        return src 
+    if width is None:
+        # ratio of new height to original height
+        ratio = height / (float)
+        # change width according to the ratio
+        dim = (int(w * ratio), height)
+    else:
+        ratio = weight/(float)
+        dim = (weight, int(h * ratio))
+    
+    result = cv2.resize(src, dim, interpolation=inter)
 
+    return result
+    
 def stitcher(images, drawKP, reprojThresh = 4.0, ratio = 0.75):
     (imageB, imageA) = images #unwrap images from left to right
     
+    # resize both images to 400 width size
+    width = 400 
+    imageA = resize(imageA, width)
+    imageB = resize(imageB, width)
 
     grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
     grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
@@ -31,8 +52,10 @@ def stitcher(images, drawKP, reprojThresh = 4.0, ratio = 0.75):
     warped_image = cv2.warpPerspective(imageA, H,
             (imageA.shape[1] + imageB.shape[1], imageA.shape[0]))
     warped_image[0:imageB.shape[0], 0:imageB.shape[1]] = imageB
+    
+    result = [imageA, imageB, warped_image]
 
-    return warped_image
+    return result
 
 def detectFeaturesKeys(image):
     descriptor = cv2.xfeatures2d.SIFT_create()
@@ -77,7 +100,7 @@ if imageA is None:
     print("None")
 images = [imageA, imageB]
 
-result = stitcher(images, 1)
+(imageA, imageB, result) = stitcher(images, 1)
 cv2.imshow("imgA", imageA)
 cv2.imshow("imgB", imageB)
 cv2.imshow("result", result)
