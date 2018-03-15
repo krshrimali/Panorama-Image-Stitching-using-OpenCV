@@ -2,37 +2,27 @@ import cv2
 import numpy as np
 import argparse
 
-def resize(src, dst, width=None, height=None,
-        inter=cv2.INTER_AREA):
+def resize(src, width=None, height=None, inter=cv2.INTER_AREA):
+    print("Resizing... ")
     dim = None
     (h, w) = src.shape[:2] # take height and width
-    
-    # if nothing of width and height is given, return image
     if width is None and height is None:
         return src 
     if width is None:
         # ratio of new height to original height
-        ratio = height / (float)
+        ratio = height / float(h)
         # change width according to the ratio
         dim = (int(w * ratio), height)
     else:
-        ratio = weight/(float)
-        dim = (weight, int(h * ratio))
+        ratio = width/float(w)
+        dim = (width, int(h * ratio))
     
     result = cv2.resize(src, dim, interpolation=inter)
-
     return result
     
 def stitcher(images, drawKP, reprojThresh = 4.0, ratio = 0.75):
     (imageB, imageA) = images #unwrap images from left to right
-    
-    # resize both images to 400 width size
-    width = 400 
-    imageA = resize(imageA, width)
-    imageB = resize(imageB, width)
-
-    grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
-    grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
+    print(imageA.shape) 
 
     # detect features and key points
     (kpA, featuresA) = detectFeaturesKeys(imageA)
@@ -95,12 +85,17 @@ args = vars(arg.parse_args())
 
 imageA = cv2.imread(args["first"])
 imageB = cv2.imread(args["second"])
+# resizing images to width 400
+imageA = resize(imageA, 400)
+imageB = resize(imageB, 400)
 
-if imageA is None:
-    print("None")
 images = [imageA, imageB]
 
-(imageA, imageB, result) = stitcher(images, 1)
+final = stitcher(images, 1)
+
+imageA = final[0]
+imageB = final[1]
+result = final[2]
 cv2.imshow("imgA", imageA)
 cv2.imshow("imgB", imageB)
 cv2.imshow("result", result)
