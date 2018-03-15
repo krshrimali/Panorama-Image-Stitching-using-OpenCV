@@ -83,19 +83,19 @@ arg.add_argument("-s", "--second", required=True,
 
 args = vars(arg.parse_args())
 
+# read images
 imageA = cv2.imread(args["first"])
 imageB = cv2.imread(args["second"])
+
 # resizing images to width 400
 imageA = resize(imageA, 400)
 imageB = resize(imageB, 400)
 
+# wrap both images in a list
 images = [imageA, imageB]
 
-final = stitcher(images, 1)
+(imageA, imageB, result) = stitcher(images, 1)
 
-imageA = final[0]
-imageB = final[1]
-result = final[2]
 cv2.imshow("imgA", imageA)
 cv2.imshow("imgB", imageB)
 cv2.imshow("result", result)
