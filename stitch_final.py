@@ -47,7 +47,7 @@ def detectFeaturesKeys(image):
     Detects features and key points.
     Return : (keypoints, features)
     For OpenCV 3.x only (to-do : opencv 2.x)
-
+    
     Usage: detectFeaturesKeys(<source image>)
     '''
     descriptor = cv2.xfeatures2d.SIFT_create()
@@ -92,7 +92,7 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     '''
     # unwrap images from right to left
     (imageB, imageA) = images 
-
+    
     # detect features and key points
     (kpA, featuresA) = detectFeaturesKeys(imageA)
     (kpB, featuresB) = detectFeaturesKeys(imageB)
@@ -126,24 +126,78 @@ if __name__ == "__main__":
             help = "first image path")
     arg.add_argument("-s", "--second", required=True,
             help = "second image path")
+    arg.add_argument("-t", "--third", required=True, help = "third image path")
+    arg.add_argument("-fo", "--fourth", required=True, help = "fourth image path")
+
 
     args = vars(arg.parse_args())
 
     # read images
     imageA = cv2.imread(args["first"])
     imageB = cv2.imread(args["second"])
+    imageC = cv2.imread(args["third"])
+    imageD = cv2.imread(args["fourth"])
 
     # resizing images to width 400
     imageA = resize(imageA, 400)
     imageB = resize(imageB, 400)
+    imageC = resize(imageC, 400)
+    imageD = resize(imageD, 400)
 
     # wrap both images in a list
     images = [imageA, imageB]
+    (imageA, imageB, result)   = stitcher(images, 1)
+    
+    print(result.shape, imageC.shape)
 
-    (imageA, imageB, result) = stitcher(images, 1)
+    images = [imageC, result]
+    (imageC, result, result2)  = stitcher(images, 1)
+    
+
+    images = [imageD, result2]
+    (imageD, result2, result3) = stitcher(images, 1)
+    
 
     cv2.imshow("imgA", imageA)
     cv2.imshow("imgB", imageB)
+    cv2.imshow("imgC", imageC)
+    cv2.imshow("imgD", imageD)
+
     cv2.imshow("result", result)
+    cv2.imshow("result2", result2)
+    cv2.imshow("result3", result3)
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()    # resizing images to width 400
+    imageA = resize(imageA, 400)
+    imageB = resize(imageB, 400)
+    imageC = resize(imageC, 400)
+    imageD = resize(imageD, 400)
+
+    # wrap both images in a list
+    images = [imageA, imageB]
+    (imageA, imageB, result)   = stitcher(images, 1)
+    
+    result = resize(result, 400)
+    print(result.shape, imageC.shape)
+    
+    images = [result, imageC]
+
+    (result, imageC, result2)  = stitcher(images, 1)
+    
+
+    images = [result2, imageD]
+    (result2, imageD, result3) = stitcher(images, 1)
+    
+
+    cv2.imshow("imgA", imageA)
+    cv2.imshow("imgB", imageB)
+    cv2.imshow("imgC", imageC)
+    cv2.imshow("imgD", imageD)
+
+    cv2.imshow("result", result)
+    cv2.imshow("result2", result2)
+    cv2.imshow("result3", result3)
+
     cv2.waitKey(0)
     cv2.destroyAllWindows()
