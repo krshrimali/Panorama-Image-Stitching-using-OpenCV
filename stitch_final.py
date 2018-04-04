@@ -55,9 +55,9 @@ def detectFeaturesKeys(image):
     (kp, features) = descriptor.detectAndCompute(image, None)
 
     kps = np.float32([kp_.pt for kp_ in kp])
-    return (kps, features)
+    return (kp, kps, features)
 
-def matchKeyPoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
+def matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
     '''
     Match Key Points
     Usage: matchKeyPoints(keypoints_imageA, keypoints_imageB, features_imageA,
@@ -74,6 +74,24 @@ def matchKeyPoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
     for m in rawMatches:
         if len(m) == 2 and m[0].distance < m[1].distance * ratio:
             matches.append((m[0].trainIdx, m[0].queryIdx))
+
+    # reference : OpenCV Tutorial for Drawing Key Points (Brute Force method)
+    # writing function to debug newspaper image panorama issue
+    good = []
+    print("Showing matches")
+    
+    bf = cv2.BFMatcher()
+    matches_new = bf.knnMatch(featuresA, featuresB, k = 2)
+
+    for m, n in matches_new:
+        if m.distance < 0.75 * n.distance:
+            good.append([m])
+    
+    img_drawn = cv2.drawMatchesKnn(imageA, kpA, imageB, kpB, good, None, flags=2)
+    cv2.imshow("Key Points", img_drawn)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     if len(matches) > 4:
         ptsA = np.float32([kpsA[i] for (_, i) in matches])
         ptsB = np.float32([kpsB[i] for (i, _) in matches])
@@ -95,13 +113,14 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     (imageB, imageA) = images 
 
     # detect features and key points
-    (kpA, featuresA) = detectFeaturesKeys(imageA)
-    (kpB, featuresB) = detectFeaturesKeys(imageB)
+    (kpA, kpsA, featuresA) = detectFeaturesKeys(imageA)
+    (kpB, kpsB, featuresB) = detectFeaturesKeys(imageB)
 
     # match features between the two images 
-    matched_features = matchKeyPoints(kpA, kpB, featuresA,
+    matched_features = matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA,
             featuresB, ratio, reprojThresh)
-
+    
+    # draw_keypoints(imageA, kpA, imageB, kpB, featuresA, featuresB)
     if(matched_features is None):
         print("No features matched.")
         return None
@@ -129,7 +148,7 @@ if __name__ == "__main__":
             help = "second image path")
     arg.add_argument("-t", "--third", required=False, help = "third image path")
     arg.add_argument("-fo", "--fourth", required=False, help = "fourth image path")
-
+    arg.add_argument("-dest", "--destination", required=True, help = "Destination Name")
 
     args = vars(arg.parse_args())
 
@@ -140,15 +159,16 @@ if __name__ == "__main__":
     # imageC = cv2.imread(args["third"])
     # imageD = cv2.imread(args["fourth"])
 
-    # imageA = resize(imageA, 400)
-    # imageB = resize(imageB, 400)
+    imageA = resize(imageA, 400)
+    imageB = resize(imageB, 400)
     # imageC = resize(imageC, 400)
     # imageD = resize(imageD, 400)
 
     # wrap both images in a list
     images = [imageA, imageB]
     (imageA, imageB, result) = stitcher(images, 1)
-
+    
+    cv2.imwrite(args["destination"], result)
     cv2.imshow('result', result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
