@@ -57,6 +57,27 @@ def detectFeaturesKeys(image):
     kps = np.float32([kp_.pt for kp_ in kp])
     return (kp, kps, features)
 
+def draw_keyPoints_BFMatcher(imageA, kpA, imageB, kpB, featuresA, featuresB):
+    # reference : OpenCV Tutorial for Drawing Key Points (Brute Force method)
+    good = []
+    print("Showing matches")
+    
+    bf = cv2.BFMatcher()
+    matches_new = bf.knnMatch(featuresA, featuresB, k = 2)
+
+    for m, n in matches_new:
+        if m.distance < 0.75 * n.distance:
+            good.append([m])
+    
+    # passing None for output image
+	# details
+    # https://stackoverflow.com/questions/31631352/typeerror-required-argument-outimg-pos-6-not-found 
+    cv2.drawMatchesKnn 
+    img_drawn = cv2.drawMatchesKnn(imageA, kpA, imageB, kpB, good, None, flags=2)
+    cv2.imshow("Key Points", img_drawn)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
 def matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
     '''
     Match Key Points
@@ -74,23 +95,10 @@ def matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA, featuresB, ratio, reprojThre
     for m in rawMatches:
         if len(m) == 2 and m[0].distance < m[1].distance * ratio:
             matches.append((m[0].trainIdx, m[0].queryIdx))
-
-    # reference : OpenCV Tutorial for Drawing Key Points (Brute Force method)
+    
     # writing function to debug newspaper image panorama issue
-    good = []
-    print("Showing matches")
+    draw_keyPoints_BFMatcher(imageA, kpA, imageB, kpB, featuresA, featuresB)
     
-    bf = cv2.BFMatcher()
-    matches_new = bf.knnMatch(featuresA, featuresB, k = 2)
-
-    for m, n in matches_new:
-        if m.distance < 0.75 * n.distance:
-            good.append([m])
-    
-    img_drawn = cv2.drawMatchesKnn(imageA, kpA, imageB, kpB, good, None, flags=2)
-    cv2.imshow("Key Points", img_drawn)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
     if len(matches) > 4:
         ptsA = np.float32([kpsA[i] for (_, i) in matches])
@@ -120,7 +128,7 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     matched_features = matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA,
             featuresB, ratio, reprojThresh)
     
-    # draw_keypoints(imageA, kpA, imageB, kpB, featuresA, featuresB)
+    # draw_keypoints(imageB, kpB, imageA, kpA, featuresA, featuresB)
     if(matched_features is None):
         print("No features matched.")
         return None
