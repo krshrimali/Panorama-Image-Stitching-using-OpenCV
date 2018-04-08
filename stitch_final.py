@@ -164,19 +164,31 @@ if __name__ == "__main__":
     imageA = cv2.imread(args["first"])
     imageB = cv2.imread(args["second"])
 
-    # imageC = cv2.imread(args["third"])
-    # imageD = cv2.imread(args["fourth"])
+    imageC = cv2.imread(args["third"])
+    imageD = cv2.imread(args["fourth"])
 
     imageA = resize(imageA, 400)
     imageB = resize(imageB, 400)
-    # imageC = resize(imageC, 400)
-    # imageD = resize(imageD, 400)
+    imageC = resize(imageC, 400)
+    imageD = resize(imageD, 400)
 
     # wrap both images in a list
     images = [imageA, imageB]
-    (imageA, imageB, result) = stitcher(images, 1)
     
-    cv2.imwrite(args["destination"], result)
-    cv2.imshow('result', result)
+    (imageA, imageB, result_A_B) = stitcher(images, 1)
+
+    # result_A_B = resize(result_A_B, 400)
+
+    images = [imageC, result_A_B]
+    (imageC, result_A_B, result_AB_C) = stitcher(images, 1)
+
+    images = [imageD, result_AB_C]
+    (imageD, result_AB_C, result_AB_CD) = stitcher(images, 1)
+
+    # result_AB_CD = resize(result_AB_CD, 400)
+    # images = [imageC, result_A_B]
+    # (imageC, result_A_B, result_AB_C) = stitcher(images, 1)
+    cv2.imwrite(args["destination"], result_AB_CD)
+    cv2.imshow('result', result_AB_CD)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
