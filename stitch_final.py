@@ -79,10 +79,10 @@ def draw_keyPoints_BFMatcher(imageA, kpA, imageB, kpB, featuresA, featuresB):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
-def matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
+def matchKeyPoints(imageA, imageB, kpA, kpB, kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
     '''
     Match Key Points
-    Usage: matchKeyPoints(keypoints_imageA, keypoints_imageB, features_imageA,
+    Usage: matchKeyPoints(imageA, imageB, keypoints_imageA, keypoints_imageB, features_imageA,
     features_imageB, ratio, reprojThresh)
 
     Returns: None if no match found
@@ -119,6 +119,9 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     returns list of three images: [imageA, imageB, panorama_image]
     '''
     # unwrap images from right to left
+    # imageB = images[0]
+    # imageA = images[1]
+
     (imageB, imageA) = images 
 
     # detect features and key points
@@ -126,7 +129,7 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     (kpB, kpsB, featuresB) = detectFeaturesKeys(imageB)
 
     # match features between the two images 
-    matched_features = matchKeyPoints(kpA, kpB, kpsA, kpsB, featuresA,
+    matched_features = matchKeyPoints(imageA, imageB, kpA, kpB, kpsA, kpsB, featuresA,
             featuresB, ratio, reprojThresh)
     
     # draw_keypoints(imageB, kpB, imageA, kpA, featuresA, featuresB)
@@ -143,7 +146,7 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     warped_image[0:imageB.shape[0], 0:imageB.shape[1]] = imageB
 
     # wrap all the images to a list and return
-    result = [imageA, imageB, warped_image]
+    result = warped_image
     return result
 
 def show(img):
@@ -151,34 +154,66 @@ def show(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+def rotate_and_crop(result_):
+    # select ROI from image
+    # reference: https://www.learnopencv.com/how-to-select-a-bounding-box-roi-in-opencv-cpp-python/
+    r = cv2.selectROI(result_, False)
+    result_ = result_[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
+    
+    rotate_ = input("Do you want to rotate the image? (yes/no) ")
+    if(rotate_.lower() == "yes"):
+        degrees = int(input("Degree by which you want to rotate the image: "))
+        
+        rows, cols, channels = result_.shape
+        M          = cv2.getRotationMatrix2D((cols/2,rows/2), degrees, 1)
+        dst        = cv2.warpAffine(result_, M, (cols,rows))
+        
+        result_ = ndimage.rotate(result_, degrees)
+        show(result_)
+    
+    return result_
+
 if __name__ == "__main__":
     # construct argument parse
     arg = argparse.ArgumentParser() 
 
-    # parse arguments
-    arg.add_argument("-f", "--first", required=True,
-            help = "first image path")
-    arg.add_argument("-s", "--second", required=True,
-            help = "second image path")
-    arg.add_argument("-t", "--third", required=False, help = "third image path")
-    arg.add_argument("-fo", "--fourth", required=False, help = "fourth image path")
     arg.add_argument("-dest", "--destination", required=True, help = "Destination Name")
-
+    
     args = vars(arg.parse_args())
 
-    # read images
-    imageA = cv2.imread(args["first"])
-    imageB = cv2.imread(args["second"])
+    count_of_images = int(input("Number of images to stitch: "))
+    
+    count = 0
 
-    imageC = cv2.imread(args["third"])
-    imageD = cv2.imread(args["fourth"])
+    while(True):
+        if(count == 0):
+            input_first  = input("first image path: ")
+            input_second = input("second image path: ")
+            imageA       = cv2.imread(input_first)
+            imageB       = cv2.imread(input_second)
+            print(imageA.shape)
+            imageA = resize(imageA, 400)
+            imageB = resize(imageB, 400)
+            print(imageA.shape)
+        else:
+            input_path   = input("Next image path: ")
+            imageB       = cv2.imread(input_path)
+            imageB       = resize(imageB, 400)
+        images           = [imageA, imageB]
+        imageA           = stitcher(images, 1)
 
-    imageA = resize(imageA, 400)
-    imageB = resize(imageB, 400)
-    imageC = resize(imageC, 400)
-    imageD = resize(imageD, 400)
+        show(imageA)
+        imageA = rotate_and_crop(imageA)
+        count += 1
 
-    # wrap both images in a list
+        check_string =  input("Do you want to exit? (yes/no)")
+        if(check_string == "yes"):
+            break
+    
+    # imageA = rotate_and_crop(imageA)
+    cv2.imwrite(args["destination"], imageA)
+
+    '''
     images = [imageB, imageA]
     
     (imageA, imageB, result_A_B) = stitcher(images, 1)
@@ -193,24 +228,25 @@ if __name__ == "__main__":
 
     images = [imageD, result_AB_C]
     (imageD, result_AB_C, result_AB_CD) = stitcher(images, 1)
-
-    # result_AB_CD = resize(result_AB_CD, 400)
+    
+    # result_ = resize(result_, 400)
     
     # select ROI from image
     # reference: https://www.learnopencv.com/how-to-select-a-bounding-box-roi-in-opencv-cpp-python/
-    r = cv2.selectROI(result_AB_CD, False)
-    result_AB_CD = result_AB_CD[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
+    r = cv2.selectROI(result_, False)
+    result_ = result_[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
     
     rotate_ = input("Do you want to rotate the image? (yes/no) ")
     if(rotate_.lower() == "yes"):
         degrees = int(input("Degree by which you want to rotate the image: "))
-        '''
-        rows, cols, channels = result_AB_CD.shape
+        
+        rows, cols, channels = result_.shape
         M          = cv2.getRotationMatrix2D((cols/2,rows/2), degrees, 1)
-        dst        = cv2.warpAffine(result_AB_CD, M, (cols,rows))
-        '''
-        result_AB_CD = ndimage.rotate(result_AB_CD, degrees)
-        show(result_AB_CD)
-    
+        dst        = cv2.warpAffine(result_, M, (cols,rows))
+        
+        result_ = ndimage.rotate(result_, degrees)
+        show(result_)
+     
     # write the image to the destination
-    cv2.imwrite(args["destination"], result_AB_CD)  
+    cv2.imwrite(args["destination"], result_)  
+    '''
