@@ -9,6 +9,7 @@ Author: Kushashwa Ravi Shrimali
 import cv2
 import numpy as np
 import argparse
+from scipy import ndimage
 
 # utility function - resize image to defined height and width
 def resize(src, width=None, height=None, inter=cv2.INTER_AREA):
@@ -194,10 +195,22 @@ if __name__ == "__main__":
     (imageD, result_AB_C, result_AB_CD) = stitcher(images, 1)
 
     # result_AB_CD = resize(result_AB_CD, 400)
-    # images = [imageC, result_A_B]
-    # (imageC, result_A_B, result_AB_C) = stitcher(images, 1)
-
-    cv2.imwrite(args["destination"], result_AB_CD)
-    cv2.imshow('result', result_AB_CD)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    
+    # select ROI from image
+    # reference: https://www.learnopencv.com/how-to-select-a-bounding-box-roi-in-opencv-cpp-python/
+    r = cv2.selectROI(result_AB_CD, False)
+    result_AB_CD = result_AB_CD[int(r[1]):int(r[1] + r[3]), int(r[0]):int(r[0] + r[2])]
+    
+    rotate_ = input("Do you want to rotate the image? (yes/no) ")
+    if(rotate_.lower() == "yes"):
+        degrees = int(input("Degree by which you want to rotate the image: "))
+        '''
+        rows, cols, channels = result_AB_CD.shape
+        M          = cv2.getRotationMatrix2D((cols/2,rows/2), degrees, 1)
+        dst        = cv2.warpAffine(result_AB_CD, M, (cols,rows))
+        '''
+        result_AB_CD = ndimage.rotate(result_AB_CD, degrees)
+        show(result_AB_CD)
+    
+    # write the image to the destination
+    cv2.imwrite(args["destination"], result_AB_CD)  
