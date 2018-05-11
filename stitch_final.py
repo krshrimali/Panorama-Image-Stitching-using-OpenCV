@@ -145,6 +145,11 @@ def stitcher(images, reprojThresh = 4.0, ratio = 0.75):
     result = [imageA, imageB, warped_image]
     return result
 
+def show(img):
+    cv2.imshow("Image", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 if __name__ == "__main__":
     # construct argument parse
     arg = argparse.ArgumentParser() 
@@ -173,14 +178,17 @@ if __name__ == "__main__":
     imageD = resize(imageD, 400)
 
     # wrap both images in a list
-    images = [imageA, imageB]
+    images = [imageB, imageA]
     
     (imageA, imageB, result_A_B) = stitcher(images, 1)
+    
+    show(result_A_B)
 
     # result_A_B = resize(result_A_B, 400)
 
     images = [imageC, result_A_B]
     (imageC, result_A_B, result_AB_C) = stitcher(images, 1)
+    show(result_AB_C)
 
     images = [imageD, result_AB_C]
     (imageD, result_AB_C, result_AB_CD) = stitcher(images, 1)
@@ -188,6 +196,7 @@ if __name__ == "__main__":
     # result_AB_CD = resize(result_AB_CD, 400)
     # images = [imageC, result_A_B]
     # (imageC, result_A_B, result_AB_C) = stitcher(images, 1)
+
     cv2.imwrite(args["destination"], result_AB_CD)
     cv2.imshow('result', result_AB_CD)
     cv2.waitKey(0)
